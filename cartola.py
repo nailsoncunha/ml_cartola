@@ -69,13 +69,28 @@ math.sqrt(mean_squared_error(y_train, y_pred))
 
 ####################### Regressao Ridge w/ cross validation ###############################
 lambdas = np.logspace(-5, -1, 50)
-ridge = RidgeCV(alphas = lambdas, fit_intercept=True, cv=10, store_cv_values=True)
+ridge = RidgeCV(alphas = lambdas, fit_intercept=True, cv=10)
 ridge.fit(X_train, y_train)
 
 ridge.alpha_
 ridge.cv_values_
 ridge.score(X_train, y_train)
 ridge.get_params()
+ridge.coef_
+
+print('Melhor lamda: %0.5f' %ridge.alpha_)
+
+important_variables = []
+club_plus_position = 0
+for i in range(len(ridge.coef_)):
+    if abs(ridge.coef_[i]) >= 0.1:
+        if(i < len(df.drop(columns=['clube_id', 'posicao_id']).columns)):
+            important_variables.append(df.drop(columns=['clube_id', 'posicao_id']).columns[i])
+        else:
+            club_plus_position += 1
+print('Variáveis mais importantes para o Ridge: ', important_variables)
+print('Juntamente com %d variáveis referentes a posição do jogador e id do clube' %(club_plus_position))
+
 
 y_pred = ridge.predict(X_train)
 
@@ -84,16 +99,16 @@ math.sqrt(mean_squared_error(y_train, y_pred))
 
 
 ####################### Regressao LASSO w/ cross validation ###############################
-classifier = LassoCV(cv=10, alphas=lambdas)
-sfm = SelectFromModel(classifier, threshold='median')
+lasso = LassoCV(cv=10, alphas=lambdas)
+sfm = SelectFromModel(lasso, prefit=True)
 sfm.fit(X_train, y_train)
-n_features = sfm.transform(X_train).shape[1]
-
+n_features = sfm.transform(X_train)
 indices = sfm.get_support(indices=True)
 
-classifier.fit(X_train[:, indices], y_train)
+lasso.fit(X_train, y_train)
+lasso.coef_
 
-y_pred = classifier.predict(X_train[:, indices])
+y_pred = lasso.predict(X_train[:, indices])
 
 math.sqrt(mean_squared_error(y_train, y_pred))
 
